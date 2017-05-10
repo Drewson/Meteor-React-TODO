@@ -54,7 +54,8 @@ class App extends Component {
     if( this.state.inputValue ){
        ToDos.insert({ 
          title: this.state.inputValue,
-         complete: false
+         complete: false,
+         owner: this.props.currentUserId 
        })
 
        this.setState({
@@ -85,32 +86,34 @@ class App extends Component {
         <div className="todo-list">
 
         <h1>ToDo</h1>
-        <div className="add-todo">
-          <form name="addTodo" onSubmit={this.addToDo}>
-              <input type="text" onChange={(e) => this.onInputChange(e)} value={this.state.inputValue}/>
-              <span>(press enter to add)</span>
-          </form>
-        </div>
-
-          <ul>
-            {todos.map((todo, i) => (
-              <ToDoItem  
-                item={todo} 
-                key={i} 
-                toggleComplete={() => this.toggleComplete(todo)}
-                removeTodo={() => this.removeTodo(todo)}
-              />
-            ))}
-          </ul>
-
-          <div className='todo-admin'> 
-            <ToDoCount numb={this.props.todos.length} />
-            { this.hasCompleted() && 
-              <ClearButton removeCompleted={() => this.removeCompleted()} />  
-            }
+        { this.props.currentUser &&
+        <div>
+          <div className="add-todo">
+            <form name="addTodo" onSubmit={this.addToDo}>
+                <input type="text" onChange={(e) => this.onInputChange(e)} value={this.state.inputValue}/>
+                <span>(press enter to add)</span>
+            </form>
           </div>
-          
-        </div>
+
+            <ul>
+              {this.props.todos.filter(todo => todo.owner === this.props.currentUser).map((todo, i) => (
+                <ToDoItem  
+                  item={todo} 
+                  key={i} 
+                  toggleComplete={() => this.toggleComplete(todo)}
+                  removeTodo={() => this.removeTodo(todo)}
+                />
+              ))}
+            </ul>
+
+            <div className='todo-admin'> 
+              <ToDoCount numb={this.props.todos.length} />
+              { this.hasCompleted() && 
+                <ClearButton removeCompleted={() => this.removeCompleted()} />  
+              }
+            </div>
+          </div>
+        }</div>
       </div>
     );
   }
@@ -118,6 +121,8 @@ class App extends Component {
 
 App.PropTypes = {
   todos: PropTypes.array.isRequired,
+  currentUser: PropTypes.object,
+  currentUserId: PropTypes.string
 }
 
 App.defaultProps = {
@@ -127,6 +132,8 @@ App.defaultProps = {
 
 export default createContainer(() => {
   return {
+    currentUser: Meteor.user(),
+    currentUserId: Meteor.userId(),
     todos: ToDos.find({}).fetch()
   };
 }, App);
