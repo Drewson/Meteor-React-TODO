@@ -21,22 +21,19 @@ class App extends Component {
 
    }
 
-  toggleComplete(item){
-    ToDos.update( { _id: item._id }, {"$set": {
-      complete: !item.complete
-    }})
+  toggleComplete(todo){
+    console.log(todo)
+    Meteor.call('todos.toggleComplete', todo)
   }
 
-  removeTodo(item){
-    ToDos.remove({ _id: item._id })
+  removeToDo(todo){
+    Meteor.call('todos.removeToDo', todo)
   }
 
   removeCompleted(){
-    this.props.todos.forEach( todo => {
-      if(todo.complete === true){
-        ToDos.remove({ _id: todo._id })
-      }
-    })
+    let todoIds = this.props.todos.filter(todo => todo.complete).map(todo => todo._id);
+    console.log(todoIds);
+    Meteor.call('todos.removeCompleted', todoIds)
   }
 
   hasCompleted(){
@@ -52,11 +49,8 @@ class App extends Component {
     event.preventDefault();
 
     if( this.state.inputValue ){
-       ToDos.insert({ 
-         title: this.state.inputValue,
-         complete: false,
-         owner: this.props.currentUserId 
-       })
+       
+       Meteor.call('todos.addToDo', this.state.inputValue)
 
        this.setState({
          inputValue: ''
@@ -78,6 +72,8 @@ class App extends Component {
 
     const todos = this.props.todos;
 
+    const userToDos = this.props.todos.filter(todo => todo.owner === this.props.currentUserId)
+
     return (
       <div className='app-wrapper'>
         <div className='login-wrapper'>
@@ -96,18 +92,20 @@ class App extends Component {
           </div>
 
             <ul>
-              {this.props.todos.filter(todo => todo.owner === this.props.currentUser).map((todo, i) => (
-                <ToDoItem  
-                  item={todo} 
-                  key={i} 
-                  toggleComplete={() => this.toggleComplete(todo)}
-                  removeTodo={() => this.removeTodo(todo)}
-                />
-              ))}
+              {
+                userToDos.map((todo, i) => (
+                  <ToDoItem  
+                    item={todo} 
+                    key={i} 
+                    toggleComplete={() => this.toggleComplete(todo)}
+                    removeTodo={() => this.removeToDo(todo)}
+                  />
+                ))
+              }
             </ul>
 
             <div className='todo-admin'> 
-              <ToDoCount numb={this.props.todos.length} />
+              <ToDoCount numb={userToDos.length} />
               { this.hasCompleted() && 
                 <ClearButton removeCompleted={() => this.removeCompleted()} />  
               }
@@ -131,6 +129,8 @@ App.defaultProps = {
 
 
 export default createContainer(() => {
+  Meteor.subscribe('todos');
+
   return {
     currentUser: Meteor.user(),
     currentUserId: Meteor.userId(),

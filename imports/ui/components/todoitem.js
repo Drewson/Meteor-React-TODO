@@ -2,6 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 
 const ToDoItem = ({item, toggleComplete, removeTodo}) => {
+  console.log('TODOITEM')
   return (
     <li>{item.title}
       <input
